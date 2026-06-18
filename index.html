@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SciWrite AI — Production-Grade Research Paper Generator</title>
+    <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap)" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #1e293b; line-height: 1.5; }
+        
+        .app-container { display: flex; min-height: 100vh; }
+        
+        /* SIDEBAR STYLING */
+        sidebar { width: 320px; background-color: #ffffff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; flex-shrink: 0; }
+        .logo-area { display: flex; align-items: center; gap: 12px; padding: 24px 20px; border-bottom: 1px solid #f1f5f9; }
+        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #2563eb, #7c3aed); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 18px; font-weight: bold; }
+        .logo-text { font-size: 1.15rem; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; }
+        .logo-badge { font-size: 0.6rem; font-weight: 700; background: linear-gradient(90deg, #2563eb, #7c3aed); color: #ffffff; padding: 2px 6px; border-radius: 20px; text-transform: uppercase; margin-left: auto; }
+        
+        .sidebar-content { padding: 20px; flex-grow: 1; overflow-y: auto; }
+        .sb-group { margin-bottom: 24px; }
+        .sb-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; margin-bottom: 10px; display: block; }
+        
+        .radio-box-container { display: flex; flex-direction: column; gap: 8px; }
+        .radio-label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; color: #334155; cursor: pointer; }
+        .radio-inline { flex-direction: row; gap: 16px; }
+        
+        .form-select, .form-input-text { width: 100%; padding: 8px 12px; background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.88rem; color: #0f172a; transition: border-color 0.15s; }
+        .form-select:focus, .form-input-text:focus { border-color: #2563eb; outline: none; }
+        
+        .range-slider-wrapper { margin-top: 8px; }
+        .range-slider { width: 100%; accent-color: #2563eb; }
+        .slider-meta { font-size: 0.75rem; color: #64748b; margin-top: 4px; display: flex; justify-content: space-between; }
+        
+        .file-box { border: 2px dashed #cbd5e1; padding: 12px; border-radius: 6px; text-align: center; cursor: pointer; background-color: #f8fafc; transition: background-color 0.15s; }
+        .file-box:hover { background-color: #f1f5f9; }
+        .file-box input { display: none; }
+        .file-box-text { font-size: 0.78rem; color: #475569; }
+        
+        .workflow-box { font-size: 0.72rem; color: #64748b; line-height: 1.8; padding: 12px; background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .workflow-box b { color: #334155; }
+
+        /* MAIN CONTENT AREA */
+        main { flex-grow: 1; padding: 40px; overflow-y: auto; }
+        
+        .hero-wrap { border-bottom: 1px solid #e2e8f0; padding-bottom: 28px; margin-bottom: 32px; }
+        .hero-eyebrow { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #2563eb; margin-bottom: 8px; }
+        .hero-h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 2.8rem; font-weight: 700; line-height: 1.1; background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #7c3aed 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 12px; }
+        .hero-sub { font-size: 1.05rem; color: #475569; max-width: 750px; line-height: 1.6; }
+        
+        .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+        .stat-pill { display: inline-flex; align-items: center; gap: 7px; background-color: rgba(37, 99, 235, 0.06); border: 1px solid rgba(37, 99, 235, 0.15); border-radius: 20px; padding: 6px 14px; font-size: 0.8rem; font-weight: 500; color: #2563eb; }
+
+        /* TABS STYLING */
+        .tabs-header { display: flex; border-bottom: 1px solid #e2e8f0; margin-bottom: 28px; gap: 8px; }
+        .tab-btn { padding: 12px 20px; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: #64748b; background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.15s; }
+        .tab-btn:hover { color: #2563eb; }
+        .tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
+        
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        
+        /* CARD DESIGN */
+        .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .sec-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .sec-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+        .sec-icon-blue { background-color: rgba(37, 99, 235, 0.1); color: #2563eb; }
+        .sec-icon-purple { background-color: rgba(124, 58, 237, 0.1); color: #7c3aed; }
+        .sec-icon-green { background-color: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .sec-icon-pink { background-color: rgba(236, 72, 153, 0.1); color: #ec4899; }
+        .sec-title { font-size: 1.05rem; font-weight: 600; color: #0f172a; }
+        .sec-sub { font-size: 0.8rem; color: #64748b; margin-top: 1px; }
+
+        /* FORM ELEMENTS */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+        .form-field-full { grid-column: span 2; }
+        .form-field label { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: #475569; }
+        .form-textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; font-family: inherit; resize: vertical; color: #0f172a; }
+        .form-textarea:focus { border-color: #2563eb; outline: none; }
+
+        /* DYNAMIC AUTHOR TABLE */
+        .authors-table-wrapper { margin-top: 12px; overflow-x: auto; }
+        .table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; }
+        .table th { background-color: #f8fafc; padding: 10px 12px; font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0; }
+        .table td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        .btn-add-row { background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; margin-top: 12px; transition: all 0.15s; }
+        .btn-add-row:hover { background-color: #e2e8f0; }
+        .btn-remove-row { color: #ef4444; background: transparent; border: none; font-size: 1.2rem; cursor: pointer; padding: 0 4px; }
+
+        /* PIPELINE ACTION BUTTONS */
+        .btn-primary { background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: #ffffff; border: none; border-radius: 8px; padding: 12px 28px; font-size: 0.92rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); width: 100%; max-width: 280px; }
+        .btn-primary:hover { opacity: 0.95; }
+        .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+        /* STATUS AND PIPELINE PREVIEWS */
+        .status-container { margin-top: 24px; padding: 16px; border-radius: 8px; display: none; align-items: center; gap: 12px; font-size: 0.88rem; font-weight: 500; }
+        .status-container.running { display: flex; background-color: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+        .status-container.success { display: flex; background-color: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+        .status-container.error { display: flex; background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+        
+        .spinner { width: 18px; height: 18px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.75s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .output-workspace { display: none; margin-top: 28px; border-top: 1px solid #e2e8f0; padding-top: 28px; }
+        .output-workspace.visible { display: block; }
+        
+        .download-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 20px 0; }
+        .dl-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; }
+        .dl-card-title { font-size: 0.85rem; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+        .dl-card-meta { font-size: 0.75rem; color: #64748b; margin-bottom: 14px; }
+        .btn-download { background-color: #ffffff; color: #2563eb; border: 1px solid #bfdbfe; padding: 8px 12px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; text-align: center; text-decoration: none; cursor: pointer; transition: all 0.15s; }
+        .btn-download:hover { background-color: #eff6ff; border-color: #2563eb; }
+        .overleaf-cta { display: inline-flex; align-items: center; justify-content: center; gap: 6px; background-color: rgba(71, 181, 75, 0.08); border: 1px solid rgba(71, 181, 75, 0.25); border-radius: 6px; padding: 8px 12px; font-size: 0.82rem; font-weight: 600; color: #3b8e3f; text-decoration: none; }
+        .overleaf-cta:hover { background-color: rgba(71, 181, 75, 0.15); }
+
+        .expander { border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; background: #ffffff; overflow: hidden; }
+        .expander-header { background: #f8fafc; padding: 12px 16px; font-size: 0.85rem; font-weight: 600; color: #334155; cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center; }
+        .expander-content { padding: 16px; display: none; border-top: 1px solid #e2e8f0; }
+        .expander.open .expander-content { display: block; }
+        
+        .code-box { background-color: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 6px; font-family: monospace; font-size: 0.78rem; overflow-x: auto; max-height: 400px; white-space: pre-wrap; }
+        
+        footer { text-align: center; color: #94a3b8; font-size: 0.75rem; padding: 40px 0 20px; border-top: 1px solid #e2e8f0; margin-top: 60px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <sidebar>
+        <div class="logo-area">
+            <div class="logo-icon">🔬</div>
+            <div>
+                <div class="logo-text">SciWrite AI</div>
+            </div>
+            <div class="logo-badge">v2.0</div>
+        </div>
+        
+        <div class="sidebar-content">
+            <form id="sidebarForm">
+                <div class="sb-group">
+                    <span class="sb-label">Document Layout</span>
+                    <div class="radio-box-container">
+                        <label class="radio-label">
+                            <input type="radio" name="layout" value="Single Column" checked> Single Column
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="layout" value="Double Column"> Double Column
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="sb-group">
+                    <span class="sb-label">Paper Length</span>
+                    <div class="radio-box-container radio-inline" style="margin-bottom: 10px;">
+                        <label class="radio-label">
+                            <input type="radio" name="length_mode" value="Pages" checked> Pages
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="length_mode" value="Words"> Words
+                        </label>
+                    </div>
+                    
+                    <div id="pagesSliderWrapper" class="range-slider-wrapper">
+                        <input type="range" name="target_pages" class="range-slider" min="4" max="20" value="8" id="pagesRange">
+                        <div class="slider-meta">
+                            <span>4 pages</span>
+                            <span id="pagesVal" style="font-weight: 600; color: #2563eb;">8 pages</span>
+                            <span>20 pages</span>
+                        </div>
+                    </div>
+                    
+                    <div id="wordsSliderWrapper" class="range-slider-wrapper" style="display: none;">
+                        <input type="range" name="target_words" class="range-slider" min="1500" max="12000" value="5000" step="500" id="wordsRange">
+                        <div class="slider-meta">
+                            <span>1,500w</span>
+                            <span id="wordsVal" style="font-weight: 600; color: #2563eb;">5,000 words</span>
+                            <span>12,000w</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sb-group">
+                    <span class="sb-label">Target Venue</span>
+                    <select name="venue" class="form-select">
+                        <option value="NeurIPS" selected>NeurIPS</option>
+                        <option value="ICML">ICML</option>
+                        <option value="ICLR">ICLR</option>
+                        <option value="CVPR">CVPR</option>
+                        <option value="ACL">ACL</option>
+                        <option value="Nature">Nature</option>
+                        <option value="Science">Science</option>
+                        <option value="IEEE Transactions">IEEE Transactions</option>
+                        <option value="AAAI">AAAI</option>
+                        <option value="ECCV">ECCV</option>
+                        <option value="EMNLP">EMNLP</option>
+                        <option value="Custom / Unspecified">Custom / Unspecified</option>
+                    </select>
+                </div>
+                
+                <div class="sb-group">
+                    <span class="sb-label">Upload Figures</span>
+                    <label class="file-box">
+                        <input type="file" id="figuresInput" name="figures" multiple accept="image/png, image/jpeg, image/jpg">
+                        <span class="file-box-text" id="fileBoxText">Choose binary image vectors...</span>
+                    </label>
+                </div>
+            </form>
+            
+            <div class="workflow-box">
+                <b>Workflow Loop</b><br>
+                1 &middot; Fill Metadata &amp; Context<br>
+                2 &middot; Set runtime limits in sidebar<br>
+                3 &middot; Execute Paper Generation<br>
+                4 &middot; Download structured workspace
+            </div>
+        </div>
+    </sidebar>
+
+    <main>
+        <div class="hero-wrap">
+            <div class="hero-eyebrow">AI-Powered Academic Writing</div>
+            <h1 class="hero-h1">SciWrite AI</h1>
+            <div class="hero-sub">Transform research notes into full-length, publication-ready papers. Gemini writes every section &mdash; equations, citations, tables &mdash; then compiles to PDF structure.</div>
+            <div class="stat-row">
+                <div class="stat-pill">&#128300; Gemini 2.0 Flash</div>
+                <div class="stat-pill">&#128208; LaTeX Structures</div>
+                <div class="stat-pill">&#128196; Up to 20 Pages</div>
+                <div class="stat-pill">&#127963; 8 Major Venues</div>
+            </div>
+        </div>
+
+        <div class="tabs-header">
+            <button class="tab-btn active" onclick="switchTab(event, 'tab-metadata')">&#128203; Metadata</button>
+            <button class="tab-btn" onclick="switchTab(event, 'tab-context')">&#128300; Research Context</button>
+            <button class="tab-btn" onclick="switchTab(event, 'tab-bibliography')">&#128218; Bibliography</button>
+            <button class="tab-btn" onclick="switchTab(event, 'tab-generate')">&#128640; Generate &amp; Export</button>
+        </div>
+
+        <form id="paperForm">
+            <div id="tab-metadata" class="tab-panel active">
+                <div class="card">
+                    <div class="sec-header">
+                        <div class="sec-icon sec-icon-blue">&#128203;</div>
+                        <div>
+                            <div class="sec-title">Document Metadata</div>
+                            <div class="sec-sub">Title, academic parameters and classification keys</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>Paper Title</label>
+                        <input type="text" name="paper_title" class="form-input-text" value="Deep Multimodal Fusion for Robust Temporal Sequence Modelling in Noisy Environments">
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>Keywords (comma-separated)</label>
+                        <input type="text" name="paper_keywords" class="form-input-text" value="multimodal learning, temporal modelling, attention mechanisms, deep learning">
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="sec-header">
+                        <div class="sec-icon sec-icon-purple">&#128101;</div>
+                        <div>
+                            <div class="sec-title">Authors Table Grid</div>
+                            <div class="sec-sub">Manage active structural records for the title index block</div>
+                        </div>
+                    </div>
+                    
+                    <div class="authors-table-wrapper">
+                        <table class="table" id="authorsTable">
+                            <thead>
+                                <tr>
+                                    <th>Full Name</th>
+                                    <th>Affiliation Network Node</th>
+                                    <th>Email Address</th>
+                                    <th style="width: 40px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="text" class="form-input-text auth-name" value="Alice J. Researcher" placeholder="e.g. Dr. John Doe"></td>
+                                    <td><input type="text" class="form-input-text auth-affil" value="MIT CSAIL, Cambridge, MA, USA"></td>
+                                    <td><input type="text" class="form-input-text auth-email" value="aresearcher@mit.edu"></td>
+                                    <td><button type="button" class="btn-remove-row" onclick="removeAuthorRow(this)">&times;</button></td>
+                                </tr>
+                                <tr>
+                                    <td><input type="text" class="form-input-text auth-name" value="Bob K. Scholar" placeholder="e.g. Prof. Jane Smith"></td>
+                                    <td><input type="text" class="form-input-text auth-affil" value="Stanford NLP Group, Stanford, CA, USA"></td>
+                                    <td><input type="text" class="form-input-text auth-email" value="bscholar@stanford.edu"></td>
+                                    <td><button type="button" class="btn-remove-row" onclick="removeAuthorRow(this)">&times;</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn-add-row" onclick="addAuthorRow()">+ Add Author Row</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-context" class="tab-panel">
+                <div class="card">
+                    <div class="sec-header">
+                        <div class="sec-icon sec-icon-green">&#128300;</div>
+                        <div>
+                            <div class="sec-title">Research Vector Context</div>
+                            <div class="sec-sub">Provide analytical notes or rough matrices for model amplification</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label>Abstract Goals &amp; Contributions</label>
+                            <textarea name="abstract_goals" class="form-textarea" style="height: 150px;">* Novel cross-modal attention architecture
+* +4.2% over SOTA on MSR-VTT
+* 3x fewer parameters than TransformerXL</textarea>
+                        </div>
+                        <div class="form-field">
+                            <label>Introduction &amp; Background</label>
+                            <textarea name="intro_bg" class="form-textarea" style="height: 150px;">* Multimodal learning surged since ViLBERT (2019)
+* Temporal alignment in video+text remains unsolved
+* Existing methods fail under occlusion and noise</textarea>
+                        </div>
+                        <div class="form-field">
+                            <label>Methodology Engineering Parameters</label>
+                            <textarea name="methodology_notes" class="form-textarea" style="height: 180px;">* Dual-stream encoder: visual (ViT-L) + textual (BERT-large)
+* Cross-modal attention at layers 4, 8, 12
+* Contrastive pre-training on 50M pairs
+* AdamW, lr=3e-4, cosine schedule, 100 epochs</textarea>
+                        </div>
+                        <div class="form-field">
+                            <label>Results &amp; Experimental Data Metrics</label>
+                            <textarea name="results_data" class="form-textarea" style="height: 180px;">* Ours 89.4% vs CLIP 85.2% on MSR-VTT R@1
+* Ablation: removing visual stream -6.1%
+* Latency: 14ms vs 42ms for nearest baseline
+* FLOPS: 18.3B vs 52.1B for TransformerXL</textarea>
+                        </div>
+                        <div class="form-field form-field-full">
+                            <label>Additional Structural Instructions (Optional)</label>
+                            <textarea name="extra_notes" class="form-textarea" style="height: 80px;" placeholder="e.g. Emphasise efficiency, add limitations subsection, reference dataset X specifically"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-bibliography" class="tab-panel">
+                <div class="card">
+                    <div class="sec-header">
+                        <div class="sec-icon sec-icon-pink">&#128218;</div>
+                        <div>
+                            <div class="sec-title">Static Reference Index (BibTeX)</div>
+                            <div class="sec-sub">Paste real library entries. Absent keys are augmented via live arXiv requests</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-field">
+                        <textarea name="bibtex_entries" class="form-textarea" style="height: 380px; font-family: monospace; font-size: 0.82rem;" placeholder="@inproceedings{...}"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-generate" class="tab-panel">
+                <div class="card" style="text-align: center; padding: 40px 20px;">
+                    <div style="font-size: 3rem; margin-bottom: 16px;">🚀</div>
+                    <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 8px;">Pipeline Ignition Panel</h3>
+                    <p style="font-size: 0.88rem; color: #64748b; max-width: 500px; margin: 0 auto 24px; line-height: 1.6;">
+                        Verify all data arrays before triggering generation. The execution compiles sequential loops via the Google Gemini 2.5 architecture.
+                    </p>
+                    
+                    <button type="button" id="generateBtn" class="btn-primary" onclick="runGenerationPipeline()">✨ Generate Full Paper</button>
+                    
+                    <div id="statusBox" class="status-container">
+                        <div class="spinner" id="statusSpinner"></div>
+                        <span id="statusMessage">Awaiting synthesis orchestration rules...</span>
+                    </div>
+                </div>
+
+                <div id="outputWorkspace" class="output-workspace">
+                    <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 12px; color: #0f172a;">📥 Downloads &amp; Project Exports</h3>
+                    
+                    <div class="download-grid">
+                        <div class="dl-card">
+                            <div>
+                                <div class="dl-card-title">📝 LaTeX Source</div>
+                                <div class="dl-card-meta">.tex architecture layout documentation file</div>
+                            </div>
+                            <a id="dlTexBtn" href="#" class="btn-download">Download .tex Only</a>
+                        </div>
+                        <div class="dl-card">
+                            <div>
+                                <div class="dl-card-title">📦 Overleaf Production Bundle</div>
+                                <div class="dl-card-meta">Compressed .zip containing asset matrices &amp; reference indices</div>
+                            </div>
+                            <a id="dlZipBtn" href="#" class="btn-download">Download Project ZIP</a>
+                        </div>
+                        <div class="dl-card">
+                            <div>
+                                <div class="dl-card-title">🌐 External Ecosystem Upload</div>
+                                <div class="dl-card-meta">Import the workspace directly into your online editor</div>
+                            </div>
+                            <a href="[https://www.overleaf.com/project/new/upload](https://www.overleaf.com/project/new/upload)" target="_blank" class="overleaf-cta">↗ Open in Overleaf</a>
+                        </div>
+                    </div>
+
+                    <div class="expander">
+                        <div class="expander-header" onclick="toggleExpander(this)">
+                            <span>📊 Word Count Validation Metrics</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="expander-content">
+                            <table class="table" id="wordCountTable">
+                                <thead>
+                                    <tr>
+                                        <th>Target Target Segment Node</th>
+                                        <th>Generated Footprint</th>
+                                        <th>Target Bound</th>
+                                        <th>Density Coverage</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="expander">
+                        <div class="expander-header" onclick="toggleExpander(this)">
+                            <span>📄 Preview Extracted Prose Blocks</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="expander-content" id="prosePreviewArea">
+                            </div>
+                    </div>
+
+                    <div class="expander">
+                        <div class="expander-header" onclick="toggleExpander(this)">
+                            <span>🔧 View Base Raw Source Layout (.tex)</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="expander-content">
+                            <div class="code-box" id="rawTexBlock"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </main>
+</div>
+
+<footer>
+    SciWrite AI v2.0 &nbsp;&middot;&nbsp; Powered by Google Gemini 2.5 Flash &nbsp;&middot;&nbsp; LaTeX compilation architecture mapping &nbsp;&middot;&nbsp; Built with Flask Engine
+</footer>
+
+<script>
+    // INITIALIZATION DEFAULT DATA MIGRATION CHECK
+    const initialBibtexPlaceholder = `@inproceedings{vaswani2017attention,\n  title     = {Attention Is All You Need},\n  author    = {Vaswani, Ashish and others},\n  booktitle = {NeurIPS},\n  year      = {2017},\n}\n@article{devlin2019bert,\n  title   = {BERT: Pre-training of Deep Bidirectional Transformers},\n  author  = {Devlin, Jacob and others},\n  journal = {arXiv:1810.04805},\n  year    = {2019},\n}`;
+    document.getElementsByName('bibtex_entries')[0].value = initialBibtexPlaceholder;
+
+    // SIDEBAR CONFIGURATION LISTENERS
+    const lengthModeRadios = document.getElementsByName('length_mode');
+    const pagesWrapper = document.getElementById('pagesSliderWrapper');
+    const wordsWrapper = document.getElementById('wordsSliderWrapper');
+    
+    lengthModeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.value === 'Pages') {
+                pagesWrapper.style.display = 'block';
+                wordsWrapper.style.display = 'none';
+            } else {
+                pagesWrapper.style.display = 'none';
+                wordsWrapper.style.display = 'block';
+            }
+        });
+    });
+
+    const pagesRange = document.getElementById('pagesRange');
+    const pagesVal = document.getElementById('pagesVal');
+    pagesRange.addEventListener('input', (e) => { pagesVal.innerText = `${e.target.value} pages`; });
+
+    const wordsRange = document.getElementById('wordsRange');
+    const wordsVal = document.getElementById('wordsVal');
+    wordsRange.addEventListener('input', (e) => { wordsVal.innerText = `${Number(e.target.value).toLocaleString()} words`; });
+
+    const figuresInput = document.getElementById('figuresInput');
+    const fileBoxText = document.getElementById('fileBoxText');
+    figuresInput.addEventListener('change', (e) => {
+        if(e.target.files.length > 0) {
+            fileBoxText.innerText = `${e.target.files.length} vector asset file(s) structured.`;
+        } else {
+            fileBoxText.innerText = "Choose binary image vectors...";
+        }
+    });
+
+    // INTERACTIVE TABS FUNCTIONALITY
+    function switchTab(evt, tabId) {
+        const panels = document.querySelectorAll('.tab-panel');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        
+        panels.forEach(p => p.classList.remove('active'));
+        tabBtns.forEach(b => b.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.add('active');
+        evt.currentTarget.classList.add('active');
+    }
+
+    // EXPANDER INTERACTION
+    function toggleExpander(element) {
+        element.parentElement.classList.toggle('open');
+    }
+
+    // DYNAMIC AUTHOR MATRIX MANAGEMENT
+    function addAuthorRow() {
+        const tableBody = document.getElementById('authorsTable').getElementsByTagName('tbody')[0];
+        const newRow = tableBody.insertRow();
+        newRow.innerHTML = `
+            <td><input type="text" class="form-input-text auth-name" placeholder="Name Reference"></td>
+            <td><input type="text" class="form-input-text auth-affil" placeholder="Affiliation Node"></td>
+            <td><input type="text" class="form-input-text auth-email" placeholder="Email Contact"></td>
+            <td><button type="button" class="btn-remove-row" onclick="removeAuthorRow(this)">&times;</button></td>
+        `;
+    }
+
+    function removeAuthorRow(button) {
+        const row = button.parentElement.parentElement;
+        if(row.parentElement.rows.length > 1) {
+            row.remove();
+        } else {
+            alert("At least one primary author node context must persist within data definitions.");
+        }
+    }
+
+    // AJAX TRANSACTION ENGINE PIPELINE
+    function runGenerationPipeline() {
+        const generateBtn = document.getElementById('generateBtn');
+        const statusBox = document.getElementById('statusBox');
+        const statusSpinner = document.getElementById('statusSpinner');
+        const statusMessage = document.getElementById('statusMessage');
+        const outputWorkspace = document.getElementById('outputWorkspace');
+
+        // Extract and pack data allocations
+        const formElement = document.getElementById('paperForm');
+        const sidebarForm = document.getElementById('sidebarForm');
+        
+        const formData = new FormData(formElement);
+        
+        // Append sidebar elements cleanly
+        const layoutVal = sidebarForm.querySelector('input[name="layout"]:checked').value;
+        const lengthModeVal = sidebarForm.querySelector('input[name="length_mode"]:checked').value;
+        formData.append('layout', layoutVal);
+        formData.append('length_mode', lengthModeVal);
+        formData.append('target_pages', document.getElementById('pagesRange').value);
+        formData.append('target_words', document.getElementById('wordsRange').value);
+        formData.append('venue', sidebarForm.querySelector('select[name="venue"]').value);
+        
+        // Append multi-file assets to transaction matrix
+        const files = document.getElementById('figuresInput').files;
+        for (let i = 0; i < files.length; i++) {
+            formData.append('figures', files[i]);
+        }
+
+        // Map dynamic authors matrix to structured JSON text string
+        const authorRows = document.querySelectorAll('#authorsTable tbody tr');
+        const authorsData = [];
+        authorRows.forEach(row => {
+            const name = row.querySelector('.auth-name').value.trim();
+            const affil = row.querySelector('.auth-affil').value.trim();
+            const email = row.querySelector('.auth-email').value.trim();
+            if(name) {
+                authorsData.push({ Name: name, Affiliation: affil, Email: email });
+            }
+        });
+        formData.append('authors', JSON.stringify(authorsData));
+
+        // Validation safeguards
+        const paperTitle = document.getElementsByName('paper_title')[0].value.trim();
+        if(!paperTitle) {
+            alert("Validation Interrupted: Document Title block definition rules must be initialized.");
+            return;
+        }
+        if(authorsData.length === 0) {
+            alert("Validation Interrupted: The system tracking matrix requires at least one primary author node configuration.");
+            return;
+        }
+
+        // Display pipeline activity indicators
+        generateBtn.disabled = true;
+        statusBox.className = "status-container running";
+        statusMessage.innerText = "Initializing backend engine: Requesting literature matrices and starting synthesis orchestration blocks...";
+        outputWorkspace.classList.remove('visible');
+
+        // Client-side artificial visual update sequence to mirror serverless background execution states
+        let stepCount = 0;
+        const processMessages = [
+            "Connecting live to arXiv interface nodes to pull bibliography items...",
+            "Assembling structural references data tracking framework objects...",
+            "System execution processing chart construction scripts safely in memory space...",
+            "Synthesizing sequential narrative structures: Mapping layout and composing Abstract...",
+            "Synthesizing sequential narrative structures: Writing Introduction and Background logs...",
+            "Synthesizing sequential narrative structures: Constructing Methodology equations matrices...",
+            "Synthesizing sequential narrative structures: Formatting Results & Experimental analysis blocks...",
+            "Finalizing paper compilation layers: Concluding and writing document acknowledgements structural fields..."
+        ];
+        
+        const messageInterval = setInterval(() => {
+            if(stepCount < processMessages.length) {
+                statusMessage.innerText = `Sequential Processing State: ${processMessages[stepCount]}`;
+                stepCount++;
+            }
+        }, 5500);
+
+        fetch('/api/generate', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            clearInterval(messageInterval);
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.error || "Network error occurred during core pipeline transactions."); });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if(data.success) {
+                statusBox.className = "status-container success";
+                statusMessage.innerText = `🚀 Pipeline complete. ${data.total_words.toLocaleString()} words drafted sequentially. Workspace is bundled and ready.`;
+                
+                // Configure downstream link end paths
+                document.getElementById('dlTexBtn').href = `/download/tex?session_id=${data.session_id}`;
+                document.getElementById('dlZipBtn').href = `/download/zip?session_id=${data.session_id}`;
+                
+                // Construct metrics reporting presentation arrays
+                const tbody = document.getElementById('wordCountTable').getElementsByTagName('tbody')[0];
+                tbody.innerHTML = "";
+                data.word_counts.forEach(row => {
+                    const tr = tbody.insertRow();
+                    tr.innerHTML = `<td><b>${row.Section}</b></td><td>${row.Written}</td><td>${row.Target}</td><td>${row.Coverage}</td>`;
+                });
+
+                // Structure preview prose configurations
+                const proseArea = document.getElementById('prosePreviewArea');
+                proseArea.innerHTML = "";
+                Object.keys(data.sections).forEach(tag => {
+                    const titleText = tag.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+                    const sectionBlock = document.createElement('div');
+                    sectionBlock.style.marginBottom = "14px";
+                    sectionBlock.innerHTML = `
+                        <div style="font-size: 0.8rem; font-weight:700; color: #7c3aed; margin-bottom:4px;">${titleText}</div>
+                        <div class="code-box" style="max-height: 150px; margin-bottom: 12px;">${escapeHtml(data.sections[tag])}</div>
+                    `;
+                    proseArea.appendChild(sectionBlock);
+                });
+
+                // Display source logs configuration scripts
+                document.getElementById('rawTexBlock').innerText = data.latex_src;
+                outputWorkspace.classList.add('visible');
+            }
+        })
+        .catch(error => {
+            clearInterval(messageInterval);
+            statusBox.className = "status-container error";
+            statusMessage.innerText = `Critical System Interruption: ${error.message}`;
+            console.error(error);
+        })
+        .finally(() => {
+            generateBtn.disabled = false;
+        });
+    }
+
+    function escapeHtml(text) {
+        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+</script>
+</body>
+</html>
